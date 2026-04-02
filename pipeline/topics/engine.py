@@ -2,7 +2,7 @@
 
 import concurrent.futures
 
-from ..config import load_config, get_anthropic_client, get_claude_backend, call_claude_cli
+from ..config import load_config, get_anthropic_client, get_claude_backend, call_claude_cli, NICHE_TO_SUBREDDITS
 from ..log import log
 from .base import TopicCandidate
 
@@ -10,12 +10,17 @@ from .base import TopicCandidate
 class TopicEngine:
     """Fetches from all enabled sources, deduplicates, ranks."""
 
-    def __init__(self):
+    def __init__(self, niche: str = "general"):
+        self._niche = niche or "general"
         self._sources = []
         self._load_sources()
 
     def _load_sources(self):
-        """Load enabled topic sources from config."""
+        """Load enabled topic sources from config.
+
+        When a niche is set, subreddit and NewsAPI query defaults are overridden
+        with niche-appropriate values (user config.json can still override).
+        """
         config = load_config()
         source_config = config.get("topic_sources", {})
 
@@ -50,8 +55,20 @@ class TopicEngine:
             pass
 
         for name, cls in source_map.items():
-            src_cfg = source_config.get(name, {})
-            if src_cfg.get("enabled", name in ("reddit", "rss", "google_trends")):
+            src_cfg = dict(source_config.get(name, {}))  # shallow copy so we can mutate
+
+            # Apply niche defaults when no explicit config is set by user
+            if self._niche != "general":
+                if name == "reddit" and "subreddits" not in src_cfg:
+                    niche_subs = NICHE_TO_SUBREDDITS.get(self._niche, [])
+                    if niche_subs:
+                        src_cfg["subreddits"] = niche_subs
+                if name == "newsapi":
+                    src_cfg.setdefault("niche", self._niche)
+
+            # NewsAPI enabled if key is present (checked by is_available); others default on/off
+            default_enabled = name in ("reddit", "rss", "google_trends", "newsapi")
+            if src_cfg.get("enabled", default_enabled):
                 try:
                     self._sources.append(cls(src_cfg))
                 except Exception as e:

@@ -280,6 +280,7 @@ def main():
     # topics
     p_topics = sub.add_parser("topics", help="Discover trending topics")
     p_topics.add_argument("--limit", type=int, default=15, help="Max topics to show")
+    p_topics.add_argument("--niche", default="general", help="Content niche to filter topics (gaming, finance, fitness, tech, food, travel, general)")
 
     args = parser.parse_args()
 
@@ -293,7 +294,7 @@ def main():
     # Handle --discover flag for draft/run
     if args.cmd in ("draft", "run") and getattr(args, "discover", False):
         from .topics import TopicEngine
-        engine = TopicEngine()
+        engine = TopicEngine(niche=getattr(args, "niche", "general") or "general")
         candidates = engine.discover(limit=15)
         if not candidates:
             print("  No trending topics found. Use --news instead.")

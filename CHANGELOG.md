@@ -2,19 +2,22 @@
 
 ## [3.0.0] — 2026-04-02
 
+Generic niche support, NewsAPI integration, and multi-platform scaffold.
+
 ### Added
-- **Niche support** — `--niche` flag on `draft` and `run` commands. Injects a one-line niche context into the Claude prompt (e.g. `Niche: fitness — keep tone and examples relevant to this audience.`). Supported niches: gaming, finance, fitness, tech, food, travel, general.
-- **NewsAPI source** — `pipeline/topics/newsapi.py` (`NewsAPISource`). Fetches top headlines via the NewsAPI REST API. Silently skipped when `NEWSAPI_KEY` is absent. API key sent via `X-Api-Key` header (not URL param). Rank-based trending score (1.0 → 0.3 decay).
-- **Multi-platform scaffold** — `--platform` flag with choices `shorts`, `reels`, `tiktok`, `all`. Platform-specific script length hints via `PLATFORM_CONFIGS` in `config.py`. All platforms share 9:16 portrait for now; expand `PLATFORM_CONFIGS` to diverge per platform.
-- **`PLATFORM_CONFIGS`** dict in `config.py` — label + `max_script_words` per platform.
-- **`NICHE_TO_SUBREDDITS`** dict in `config.py` — niche → default subreddit list for topic discovery.
-- **`get_newsapi_key()`** helper in `config.py` — resolves `NEWSAPI_KEY` from env then config.json.
-- `NEWSAPI_KEY` documented in README configuration table.
+- **`--niche` flag** (`draft`, `run`, `topics`) — supported values: `gaming`, `finance`, `fitness`, `tech`, `beauty`, `food`, `travel`, `general`. Injects a one-line niche context into the Claude script prompt and routes topic discovery to niche-relevant subreddits + NewsAPI queries.
+- **NewsAPI topic source** — `pipeline/topics/newsapi.py`. Fetches top headlines for the active niche. Requires `NEWSAPI_KEY` in env or `config.json`; silently skipped if absent. API key sent via `X-Api-Key` header (not URL param) to avoid log leakage. Rank-based trending score (1.0 → 0.3 decay).
+- **`--platform` flag** (`draft`, `run`) — `shorts` (default), `reels`, `tiktok`, `all`. Sets `platform_label` + `max_script_words` hint in the Claude prompt. All platforms share 9:16 portrait for now; `PLATFORM_CONFIGS` in `config.py` is the single place to add per-platform rendering differences.
+- **`PLATFORM_CONFIGS`** dict in `config.py` — width, height, `max_script_words`, display label per platform.
+- **`NICHE_TO_SUBREDDITS`** dict in `config.py` — niche → default subreddit list applied when no explicit subreddits are set in `config.json`.
+- **`get_newsapi_key()`** helper in `config.py`.
 
 ### Changed
-- `generate_draft()` signature: added `niche` and `platform` parameters (both default to safe values).
-- `draft` output JSON now includes `niche` and `platform` fields for downstream use.
-- README: bumped to v3.0.0, added Niche Examples table, added NewsAPI to topic sources table, added autopilot CTA footer.
+- `generate_draft()` signature extended: `niche` (default `"general"`) and `platform` (default `"shorts"`). Both are stored in draft JSON.
+- `TopicEngine.__init__()` accepts `niche` param; applies niche-based subreddit + NewsAPI query defaults at init time.
+- NewsAPI enabled by default when `NEWSAPI_KEY` is present (no manual `enabled: true` needed in config.json).
+- README bumped to v3.0.0 with niche examples, platform section, NewsAPI docs, and aarees.com CTA.
+- Removed esports-specific language from default examples.
 
 ## [2.1.0] — 2026-02-27
 

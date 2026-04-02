@@ -9,9 +9,10 @@
 
 ## What's New in v3
 
-- **Niche support** — `--niche` flag tailors Claude's tone and vocabulary to your audience
-- **NewsAPI source** — optional top-headlines topic discovery (set `NEWSAPI_KEY`)
-- **Multi-platform scaffold** — `--platform` option (shorts, reels, tiktok, all)
+- **Niche support** — `--niche` flag tailors topic sources, subreddits, and Claude script tone to your content category
+- **NewsAPI integration** — optional top-headlines source (free API key at newsapi.org); silently skipped if key absent
+- **Multi-platform scaffold** — `--platform` flag targets Shorts, Reels, or TikTok with per-platform script length hints
+- **Extended language support** — see [Language Support](#language-support)
 
 ---
 
@@ -91,11 +92,11 @@ python -m pipeline run --discover --auto-pick     # trending topic, auto-selecte
 ### Discover trending topics
 ```bash
 python -m pipeline topics
-python -m pipeline topics --limit 20
+python -m pipeline topics --limit 20 --niche finance
 ```
 
 ### Options
-- `--niche NICHE` — content niche: `gaming`, `finance`, `fitness`, `tech`, `food`, `travel`, `general`
+- `--niche NICHE` — content niche: `gaming`, `finance`, `fitness`, `tech`, `beauty`, `food`, `travel`, `general`
 - `--platform PLATFORM` — target platform: `shorts`, `reels`, `tiktok`, `all`
 - `--lang en|hi` — language for voiceover + captions
 - `--verbose` — debug logging
@@ -105,16 +106,45 @@ python -m pipeline topics --limit 20
 
 ---
 
+## Language Support
+
+Voiceover and captions support `en` (English) and `hi` (Hindi) via the `--lang` flag. ElevenLabs multilingual v2 handles both; macOS `say` is the English fallback when no ElevenLabs key is configured.
+
+To add more languages: extend `VOICE_ID_*` in `config.py`, add a matching Whisper language code in `captions.py`, and add a fallback voice command in `voiceover.py`.
+
+---
+
 ## Niche Examples
 
-| Niche | Example topic | Tone |
-|-------|--------------|------|
-| `gaming` | "Best budget GPU 2025" | Hype, shorthand, community slang |
-| `finance` | "S&P 500 hits all-time high" | Clear, measured, data-driven |
-| `fitness` | "5-minute morning routine" | Motivational, actionable |
-| `tech` | "OpenAI releases new model" | Curious, accessible, forward-looking |
-| `food` | "Viral TikTok pasta recipe" | Warm, sensory, inviting |
-| `travel` | "Hidden gems in Japan" | Wanderlust, vivid, inspirational |
+| Niche | Script tone | Default topic sources |
+|-------|-------------|----------------------|
+| `gaming` | Hype, shorthand, community energy | r/gaming, r/pcgaming + NewsAPI gaming query |
+| `finance` | Clear, measured, data-driven | r/personalfinance, r/investing + NewsAPI finance query |
+| `fitness` | Motivational, actionable | r/fitness, r/bodyweightfitness + NewsAPI fitness query |
+| `tech` | Curious, accessible, forward-looking | r/technology, r/artificial + Hacker News RSS + NewsAPI tech query |
+| `food` | Warm, sensory, inviting | r/food, r/recipes + NewsAPI food query |
+| `travel` | Aspirational, vivid | r/travel, r/solotravel + NewsAPI travel query |
+
+```bash
+# Finance short — auto-pick a trending story
+python -m pipeline run --discover --auto-pick --niche finance
+
+# Gaming short for TikTok
+python -m pipeline run --news "best RPGs of 2025" --niche gaming --platform tiktok
+
+# Tech short for Shorts
+python -m pipeline run --discover --auto-pick --niche tech --platform shorts
+
+# Food short for Instagram Reels
+python -m pipeline run --news "viral pasta recipe trend" --niche food --platform reels
+
+# Fitness short in Hindi
+python -m pipeline run --news "5-minute morning workout" --niche fitness --lang hi
+
+# Travel — browse topics and pick manually
+python -m pipeline topics --niche travel
+python -m pipeline draft --discover --niche travel
+```
 
 ---
 
@@ -136,7 +166,7 @@ Configure in `~/.youtube-shorts-pipeline/config.json`:
     "reddit": {"enabled": true, "subreddits": ["technology", "worldnews"]},
     "rss": {"enabled": true, "feeds": ["https://hnrss.org/frontpage"]},
     "google_trends": {"enabled": true, "geo": "IN"},
-    "newsapi": {"enabled": true, "country": "us", "category": "general"}
+    "newsapi": {"enabled": true}
   }
 }
 ```
@@ -229,7 +259,7 @@ See [`references/troubleshooting.md`](references/troubleshooting.md).
 This pipeline handles API keys and OAuth tokens. The following measures are in place:
 
 - **Credential storage:** `config.json` and `youtube_token.json` are created atomically with `0600` permissions (owner-only) via `os.open()` — no window where the file is world-readable. Never commit these files — they are covered by `.gitignore`.
-- **API key transmission:** The Gemini API key is sent via the `x-goog-api-key` header, not as a URL query parameter, so it won't leak into logs or error messages.
+- **API key transmission:** The Gemini API key is sent via the `x-goog-api-key` header; the NewsAPI key via the `X-Api-Key` header — neither as a URL query parameter, so neither will leak into logs or error messages.
 - **Error handling:** API error messages are sanitized to never include credentials.
 - **Upload privacy:** Videos are uploaded as **private** by default. Change to `public` or `unlisted` manually on YouTube when ready.
 - **OAuth scope:** YouTube OAuth requests the minimum scopes needed (`youtube.upload` + `youtube.force-ssl`), not full account access.
@@ -246,5 +276,4 @@ MIT
 
 ---
 
-### Want this on autopilot?
-Running this manually is great. Having it run automatically, calibrated to your channel voice, posting on schedule — that's [aarees.com](https://aarees.com).
+> Want this running automatically for your channel without touching code? → [aarees.com](https://aarees.com)
