@@ -48,7 +48,7 @@ def write_secret_file(path: Path, content: str):
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w") as f:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(content)
 
 
@@ -76,7 +76,7 @@ def _get_key(name: str) -> str:
         return val
     if CONFIG_FILE.exists():
         try:
-            cfg = json.loads(CONFIG_FILE.read_text())
+            cfg = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
             val = cfg.get(name)
             if val:
                 return val
@@ -135,7 +135,7 @@ def _has_claude_max_credentials() -> bool:
     if not CLAUDE_CREDENTIALS.exists():
         return False
     try:
-        creds = json.loads(CLAUDE_CREDENTIALS.read_text())
+        creds = json.loads(CLAUDE_CREDENTIALS.read_text(encoding="utf-8"))
         return bool(creds.get("claudeAiOauth", {}).get("accessToken"))
     except Exception:
         return False
@@ -224,7 +224,7 @@ def load_config() -> dict:
     """Load the full config.json, including topic_sources."""
     if CONFIG_FILE.exists():
         try:
-            return json.loads(CONFIG_FILE.read_text())
+            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}

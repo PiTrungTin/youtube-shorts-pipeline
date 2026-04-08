@@ -73,7 +73,7 @@ class TestPipelineState:
         state.save(path)
 
         # Reload
-        reloaded = json.loads(path.read_text())
+        reloaded = json.loads(path.read_text(encoding="utf-8"))
         state2 = PipelineState(reloaded)
         assert state2.is_done("research")
         assert state2.is_done("draft")

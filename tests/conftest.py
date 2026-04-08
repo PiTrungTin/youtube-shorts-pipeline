@@ -62,5 +62,5 @@ def sample_speech_regions():
 def draft_json_path(tmp_path, sample_draft):
     """Write sample draft to a temp file and return the path."""
     path = tmp_path / "test_draft.json"
-    path.write_text(json.dumps(sample_draft, indent=2))
+    path.write_text(json.dumps(sample_draft, indent=2), encoding="utf-8")
     return path

@@ -44,7 +44,7 @@ def assemble_video(
     concat_file = out_dir / "concat.txt"
     def _esc(p):
         return str(p).replace("'", "'\\''" )
-    concat_file.write_text("\n".join(f"file '{_esc(p)}'" for p in animated))
+    concat_file.write_text("\n".join(f"file '{_esc(p)}'" for p in animated), encoding="utf-8")
 
     merged_video = out_dir / "merged_video.mp4"
     run_cmd([

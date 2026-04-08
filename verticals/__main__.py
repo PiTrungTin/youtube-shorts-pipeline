@@ -60,7 +60,7 @@ def cmd_produce(args):
     import shutil
 
     draft_path = Path(args.draft)
-    draft = json.loads(draft_path.read_text())
+    draft = json.loads(draft_path.read_text(encoding="utf-8"))
     job_id = draft["job_id"]
     lang = args.lang
     state = PipelineState(draft)
@@ -182,7 +182,7 @@ def cmd_upload(args):
     import json
 
     draft_path = Path(args.draft)
-    draft = json.loads(draft_path.read_text())
+    draft = json.loads(draft_path.read_text(encoding="utf-8"))
     lang = args.lang
     state = PipelineState(draft)
     force = getattr(args, "force", False)
